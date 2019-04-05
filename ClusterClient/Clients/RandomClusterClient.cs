@@ -14,17 +14,21 @@ namespace ClusterClient.Clients
 
         public override async Task<string> ProcessRequestAsync(string query, TimeSpan timeout)
         {
-            var uri = ReplicaAddresses[random.Next(ReplicaAddresses.Length)];
+            var addresses = GetNewIterationReplicaAddresses();
+            var uri = addresses[random.Next(addresses.Length)];
+
             var webRequest = CreateRequest($"{uri}?query={query}");
 
             Log.InfoFormat("Processing {0}", webRequest.RequestUri);
 
             var resultTask = ProcessRequestAsync(webRequest);
             await Task.WhenAny(resultTask, Task.Delay(timeout));
-            if (!resultTask.IsCompleted)
-                throw new TimeoutException();
 
-            return resultTask.Result;
+            if (resultTask.IsCompleted)
+                return resultTask.Result;
+
+            ReplicaGreyList.Add(uri, 4);
+            throw new TimeoutException();
         }
     }
 }

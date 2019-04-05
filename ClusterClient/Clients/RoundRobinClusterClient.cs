@@ -15,28 +15,30 @@ namespace ClusterClient.Clients
 
         public override async Task<string> ProcessRequestAsync(string query, TimeSpan timeout)
         {
-            var traverseOrder = GetIndexShuffle();
+            var addresses = GetNewIterationReplicaAddresses();
+            var traverseOrder = GetIndexShuffle(addresses.Length);
             timeout = TimeSpan.FromMilliseconds(timeout.TotalMilliseconds / traverseOrder.Count);
 
             foreach (var replicaIndex in traverseOrder)
             {
                 var result =
-                    await ProcessRequestAsync(CreateRequest($"{ReplicaAddresses[replicaIndex]}?query={query}"))
+                    await ProcessRequestAsync(CreateRequest($"{addresses[replicaIndex]}?query={query}"))
                        .LimitByTimeout(timeout);
 
                 if (!result.IsTimeout)
                     return result.Value;
 
-                CancelRequest(query, ReplicaAddresses[replicaIndex]);
+                ReplicaGreyList.Add(addresses[replicaIndex], 2);
+                CancelRequest(query, addresses[replicaIndex]);
             }
 
             throw new TimeoutException();
         }
 
 
-        protected List<int> GetIndexShuffle()
+        protected List<int> GetIndexShuffle(int length)
         {
-            var indices = Enumerable.Range(0, ReplicaAddresses.Length).ToList();
+            var indices = Enumerable.Range(0, length).ToList();
             indices.Shuffle(rand);
             return indices;
         }

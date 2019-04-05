@@ -23,8 +23,17 @@ namespace ClusterClient.Clients
 
         protected Guid clientId { get; } = Guid.NewGuid();
 
-        protected string[] ReplicaAddresses { get; }
+        private string[] ReplicaAddresses { get; }
+
+        protected GreyListWithCounter<string> ReplicaGreyList { get; } = new GreyListWithCounter<string>();
         protected ILog Log { get; }
+
+        protected string[] GetNewIterationReplicaAddresses()
+        {
+            var addresses = ReplicaAddresses.Where(r => ReplicaGreyList.ContainsKey(r)).ToArray();
+            ReplicaGreyList.DecreaseCounters();
+            return addresses;
+        }
 
         public abstract Task<string> ProcessRequestAsync(string query, TimeSpan timeout);
 

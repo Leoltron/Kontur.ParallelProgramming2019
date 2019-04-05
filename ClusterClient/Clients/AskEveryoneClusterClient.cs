@@ -19,7 +19,7 @@ namespace ClusterClient.Clients
 
         private async Task<string> ProcessRequestNoTimeoutAsync(string query)
         {
-            var tasksWithUris = ReplicaAddresses
+            var tasksWithUris = GetNewIterationReplicaAddresses()
                                .Select(uri => (ProcessRequestAsync(CreateRequest(uri, query)), uri))
                                .ToList();
             var firstFinishedTask = await Task.WhenAny(tasksWithUris.Select(taskAndUri => taskAndUri.Item1));

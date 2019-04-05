@@ -4,7 +4,7 @@ namespace ClusterClient
 {
     public class GreyListWithCounter<T> : Dictionary<T, int>
     {
-        public void DecreaseAll()
+        public void DecreaseCounters()
         {
             var keysToRemove = new List<T>();
             foreach (var key in Keys)

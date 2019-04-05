@@ -12,7 +12,8 @@ namespace ClusterClient.Clients
 
         public override async Task<string> ProcessRequestAsync(string query, TimeSpan timeout)
         {
-            var traverseOrder = GetIndexShuffle();
+            var addresses = GetNewIterationReplicaAddresses();
+            var traverseOrder = GetIndexShuffle(addresses.Length);
             timeout = TimeSpan.FromMilliseconds(timeout.TotalMilliseconds / traverseOrder.Count);
 
             var tasksWithUris = new List<(Task<string> task, string uri)>();
@@ -20,16 +21,19 @@ namespace ClusterClient.Clients
 
             foreach (var replicaIndex in traverseOrder)
             {
-                var task = ProcessRequestAsync(CreateRequest(ReplicaAddresses[replicaIndex], query));
+                var requestTask = ProcessRequestAsync(CreateRequest(addresses[replicaIndex], query));
 
-                tasks.Add(task);
-                tasksWithUris.Add((task, ReplicaAddresses[replicaIndex]));
+                tasks.Add(requestTask);
+                tasksWithUris.Add((task: requestTask, addresses[replicaIndex]));
 
                 var result = await Task.WhenAny(tasks).LimitByTimeout(timeout);
                 if (result.IsTimeout)
                     continue;
 
                 CancelUnfinishedRequests(query, tasksWithUris);
+                foreach (var (task, uri) in tasksWithUris)
+                    if (!task.IsCompleted)
+                        ReplicaGreyList.Add(uri, 1);
                 return result.Value.Result;
             }
 
