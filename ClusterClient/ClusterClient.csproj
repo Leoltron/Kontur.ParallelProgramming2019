@@ -63,6 +63,7 @@
     <Compile Include="Clients\RandomClusterClient.cs" />
       <Compile Include="Clients\RoundRobinClusterClient.cs"/>
       <Compile Include="Clients\SmartRoundRobinClusterClient.cs"/>
+      <Compile Include="DictExtensions.cs"/>
       <Compile Include="GreyListWithCounter.cs"/>
       <Compile Include="ListExtensions.cs"/>
     <Compile Include="Program.cs" />
