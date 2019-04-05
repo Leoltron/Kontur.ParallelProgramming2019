@@ -27,7 +27,7 @@ namespace ClusterClient.Clients
             if (resultTask.IsCompleted)
                 return resultTask.Result;
 
-            ReplicaGreyList.Add(uri, 4);
+            ReplicaGreyList.AddOrUpdate(uri, 4, (key, value) => Math.Max(4, value));
             throw new TimeoutException();
         }
     }

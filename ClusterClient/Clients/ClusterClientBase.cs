@@ -30,8 +30,13 @@ namespace ClusterClient.Clients
 
         protected string[] GetNewIterationReplicaAddresses()
         {
-            var addresses = ReplicaAddresses.Where(r => ReplicaGreyList.ContainsKey(r)).ToArray();
-            ReplicaGreyList.DecreaseCounters();
+            string[] addresses;
+            do
+            {
+                addresses = ReplicaAddresses.Where(r => !ReplicaGreyList.ContainsKey(r)).ToArray();
+                ReplicaGreyList.DecreaseCounters();
+            } while (addresses.Length == 0);
+
             return addresses;
         }
 
